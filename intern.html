@@ -1,0 +1,237 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Process Files and Export to Excel</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.16.9/xlsx.full.min.js"></script>
+ <style>
+ body::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: url("sym.jpg");
+  background-size: 1000px 300px;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  background-position: center;
+  opacity: 0.3; /* Adjust the transparency level */
+  z-index: -1; 
+  }
+  
+  h1 {
+   color: red;
+   text-align: center;
+   margin-bottom: 20px;
+   font-size:50px;
+  }
+  
+  table, th, td {
+   border: 1px solid black;
+   border-collapse: collapse;
+   padding: 10px;
+    background-color:transparent;
+  }
+  
+  th {
+   background-color: #f0f0f0;
+  }
+  
+  td {
+   text-align: center;
+  }
+  
+  .spaced {
+   margin-bottom: 20px;
+  }
+  
+  .file-input-container {
+   margin-bottom: 20px;
+  }
+  
+  .file-input-container input[type="file"] {
+   padding: 10px;
+   border: 1px solid #ccc;
+   border-radius: 5px;
+   background-color:#ffcc99;
+  }
+  
+  .file-input-container button {
+   background-color: #4CAF50;
+   color: #fff;
+   padding: 10px 20px;
+   border: none;
+   border-radius: 5px;
+   cursor: pointer;
+  }
+  
+  .file-input-container button:hover {
+   background-color: #3e8e41;
+  }
+ </style>
+</head>
+<body>
+    <h1><u>SYMBIOSIS</u></h1>
+    <div class="file-input-container spaced">
+        <input type="file" id="fileInput" multiple>
+        <button onclick="processFiles()">Process Files</button>
+   
+    <button onclick="exportTableToExcel()">Export to Excel</button>
+ </div>
+    <table id="dataTable">
+        <thead>
+            <tr>
+                <th>S.No</th>
+                <th>System No</th>
+                <th>Department</th>
+                <th>Username</th>
+                <th>Location</th>
+                <th>Block</th>
+                <th>Port Number</th>
+                <th>Model</th>
+                <th>Processor</th>
+                <th>Motherboard</th>
+                <th>Storage</th>
+                <th>Memory</th>
+                <th>Graphic Card</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Data will be inserted here -->
+        </tbody>
+    </table>
+    
+    <script>
+        async function processFiles() {
+            const fileInput = document.getElementById('fileInput');
+            const files = fileInput.files;
+            const dataTable = document.getElementById('dataTable').getElementsByTagName('tbody')[0];
+            
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                const content = await file.text();
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(content, 'text/html');
+    const extractValue = (captionText) => {
+                    const captionElement = Array.from(doc.querySelectorAll('caption')).find(caption => caption.textContent.trim().includes(captionText));
+                    if (captionElement) {
+                        const td = captionElement.nextElementSibling?.querySelector('td');
+                        if (td) {
+                            const parts = td.innerHTML.split('<br>');
+                            return parts.length > 0 ? parts[0].trim() : 'N/A';
+                        }
+                    }
+                    return 'N/A';
+                };
+
+                 const captions = doc.querySelectorAll('caption');
+                let model = extractValue(' System Model');
+                let processor = extractValue('Processor a');
+                let motherboard = extractValue('Main Circuit Board b');
+                let storage = extractValue('Drives');
+                let memory = extractValue('Memory');
+                let graphicCard = extractValue('Dsiplay ');
+
+
+captions.forEach(caption => {
+                    switch (caption.textContent.trim()) {
+                        case 'System Model':
+                            model = caption.nextElementSibling.textContent.trim();
+                            break;
+                        case 'Display':
+                        let tdElement = caption.nextElementSibling.querySelector('td');
+            let graphicCardContent = "";
+            let nodes = tdElement.childNodes;
+            
+            for (let node of nodes) {
+                if (node.nodeName === "BR") {
+                    break;
+                }
+                graphicCardContent += node.textContent || node.nodeValue;
+            }
+            
+            graphicCard = graphicCardContent.trim();
+            break;
+                    }
+                });
+     let systemNo = '';
+                let username = '';
+                let dept = '';
+                let location = '';
+                let block = '';
+                let portNumber = 'Port ';
+
+                const thElements = doc.querySelectorAll('th');
+                thElements.forEach(th => {
+                    switch (th.textContent.trim()) {
+                        case 'Computer Name:':
+                            systemNo = th.nextElementSibling.textContent.trim();
+                            break;
+                        case 'Windows Logon:':
+                            username = th.nextElementSibling.textContent.trim();
+                            break;
+                        case 'Dept:':
+                            dept = th.nextElementSibling.textContent.trim();
+                            break;
+                        case 'Location:':
+                            location = th.nextElementSibling.textContent.trim();
+                            break;
+                        case 'Block:':
+                            block = th.nextElementSibling.textContent.trim();
+                            break;
+                        case 'Port Number:':
+                            portNumber = th.nextElementSibling.textContent.trim();
+                            break;
+                    }
+                });
+
+
+                const newRow = dataTable.insertRow();
+                newRow.insertCell(0).innerText = i + 1;
+                newRow.insertCell(1).innerText = systemNo;
+                newRow.insertCell(2).innerText = dept;
+                newRow.insertCell(3).innerText = username;
+                newRow.insertCell(4).innerText = location;
+                newRow.insertCell(5).innerText = block;
+                newRow.insertCell(6).innerText = portNumber;
+                newRow.insertCell(7).innerText = model;
+                newRow.insertCell(8).innerText = processor;
+                newRow.insertCell(9).innerText = motherboard;
+                newRow.insertCell(10).innerText = storage;
+                newRow.insertCell(11).innerText = memory;
+                newRow.insertCell(12).innerText = graphicCard;
+            }
+        }
+
+        function exportTableToExcel() {
+            const table = document.getElementById("dataTable");
+            const rows = table.querySelectorAll("tr");
+
+            // Extract table data
+            const data = [];
+            rows.forEach(row => {
+                const rowData = [];
+                const cells = row.querySelectorAll("th, td");
+                cells.forEach(cell => {
+                    rowData.push(cell.innerText);
+                });
+                data.push(rowData);
+            });
+
+            // Create a new workbook and add the data
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.aoa_to_sheet(data);
+
+            // Append the worksheet to the workbook
+            XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
+
+            // Generate Excel file and trigger download
+            XLSX.writeFile(wb, "table_data.xlsx");
+        }
+    </script>
+</body>
+</html>
